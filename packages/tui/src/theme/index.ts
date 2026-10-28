@@ -1,0 +1,112 @@
+import { migrateV1, parseThemeDocument, type ThemeDocument, type ModeDefinition } from "@xudu/theme/tui"
+import { resolveThemeColors } from "./resolve"
+import { DEFAULT_THEMES, type Theme, type ThemeV1Json } from "./v1"
+import classic from "./assets/v2/classic.json" with { type: "json" }
+import classic2 from "./assets/v2/classic2.json" with { type: "json" }
+import xudu from "./assets/v2/xudu.json" with { type: "json" }
+
+export { DEFAULT_THEMES, type Theme, type ThemeV1Json } from "./v1"
+
+export type ThemeDocumentSource = Record<string, unknown>
+
+let customThemes: Record<string, ThemeDocumentSource> = {}
+let systemTheme: ThemeDocumentSource | undefined
+const listeners = new Set<(themes: Record<string, ThemeDocumentSource>) => void>()
+const parsed = new WeakMap<object, ThemeDocument>()
+let classicTheme: (ThemeDocument & {
+  readonly light: ModeDefinition
+  readonly dark: ModeDefinition
+}) | undefined
+
+export function getClassicTheme() {
+  if (classicTheme) return classicTheme
+  const document = parseThemeDocument(classic, "classic") as NonNullable<typeof classicTheme>
+  classicTheme = document
+  return document
+}
+
+let xuduTheme: ThemeDocument | undefined
+
+// xudu-code's default theme: xudu.ai's ink and paper neutrals on the classic theme structure.
+export function getXuduTheme() {
+  xuduTheme ??= parseThemeDocument(xudu, "xudu")
+  return xuduTheme
+}
+
+let classic2Theme: ThemeDocument | undefined
+
+// Temporary theme for the "new-designs" experiment. It is not part of allThemes(), so only the
+// TUI theme context offers it, and only while the experiment is enabled.
+export function getClassic2Theme() {
+  classic2Theme ??= parseThemeDocument(classic2, "classic2")
+  return classic2Theme
+}
+
+function listThemes(): Record<string, ThemeDocumentSource> {
+  // Priority: defaults < custom files < generated system.
+  const themes: Record<string, ThemeDocumentSource> = {
+    ...DEFAULT_THEMES,
+    classic: getClassicTheme(),
+    xudu: getXuduTheme(),
+    ...customThemes,
+  }
+  return {
+    ...themes,
+    system: systemTheme ?? themes.system ?? themes.xudu,
+  }
+}
+
+function syncThemes() {
+  const themes = listThemes()
+  for (const listener of listeners) listener(themes)
+}
+
+export function allThemes() {
+  return listThemes()
+}
+
+export function isThemeSource(source: unknown): source is ThemeDocumentSource {
+  if (typeof source !== "object" || source === null || Array.isArray(source)) return false
+  return "theme" in source || "base" in source
+}
+
+export function parseTheme(source: ThemeDocumentSource, name = "theme") {
+  const cached = parsed.get(source)
+  if (cached) return cached
+
+  const document = "theme" in source ? migrateV1(source as ThemeV1Json) : parseThemeDocument(source, name)
+
+  parsed.set(source, document)
+  return document
+}
+
+export function subscribeThemes(listener: (themes: Record<string, ThemeDocumentSource>) => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+export function setCustomThemes(themes: Record<string, unknown>) {
+  customThemes = Object.fromEntries(
+    Object.entries(themes).filter((entry): entry is [string, ThemeDocumentSource] => isThemeSource(entry[1])),
+  )
+  syncThemes()
+}
+
+export function setSystemTheme(theme: ThemeDocumentSource | undefined) {
+  systemTheme = theme
+  syncThemes()
+}
+
+export function hasTheme(name: string) {
+  if (!name) return false
+  return allThemes()[name] !== undefined
+}
+
+export function resolveTheme(theme: ThemeV1Json, mode: "dark" | "light"): Theme {
+  const resolved = resolveThemeColors(theme, mode)
+  return {
+    ...resolved.theme,
+    _hasSelectedListItemText: resolved.hasSelectedListItemText,
+    thinkingOpacity: resolved.thinkingOpacity,
+  }
+}

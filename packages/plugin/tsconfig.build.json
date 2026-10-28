@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": false,
+    "noEmit": false
+  },
+  // Type-level contract files check the SDK's types and are not part of the package.
+  "exclude": ["src/**/*.typecheck.ts"]
+}

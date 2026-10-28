@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@xudu/server",
+  "version": "1.2.0",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dervish12/xudu-code.git",
+    "directory": "packages/server"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "build": "bun run script/build.ts",
+    "pack": "bun run script/pack.ts",
+    "test": "bun test --only-failures",
+    "typecheck": "bun check --no-script -b",
+    "typecheck:tsc": "tsc -b",
+    "probe:workerd": "bun run script/workerd-probe.ts"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "@effect/platform-node-shared": "catalog:",
+    "@xudu/core": "workspace:*",
+    "@xudu/protocol": "workspace:*",
+    "@xudu/schema": "workspace:*",
+    "@xudu/simulation": "workspace:*",
+    "@xudu/util": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@opencode-ai/pty": "0.3.1",
+    "@xudu/client": "workspace:*",
+    "@xudu/plugin": "workspace:*",
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@typescript/native": "catalog:",
+    "fast-check": "catalog:"
+  }
+}
