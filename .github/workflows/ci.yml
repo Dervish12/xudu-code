@@ -19,12 +19,19 @@ jobs:
           bun-version: 1.4.4
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
+      # The search tools use the system ripgrep; without it they would download one, which tests forbid.
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
       - name: Test
         run: |
+          failed=""
           for package in packages/*/; do
             if grep -q '"test"' "$package/package.json"; then
               echo "::group::$package"
-              (cd "$package" && bun run test)
+              (cd "$package" && bun run test) || failed="$failed $package"
               echo "::endgroup::"
             fi
           done
+          if [ -n "$failed" ]; then
+            echo "::error::Tests failed in:$failed"
+            exit 1
+          fi
