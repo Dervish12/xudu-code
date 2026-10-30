@@ -58,7 +58,7 @@ describe("SkillInstructions", () => {
       expect(initialized.text).toBe(
         [
           "Skills provide specialized instructions and workflows for specific tasks.",
-          "Use the skill tool to load a skill when a task matches its description.",
+          "When a task matches a skill's description, call the skill tool for it FIRST, before any other tool, and follow the skill instead of your default approach. Descriptions may be in Azerbaijani or English: match by meaning, not exact words.",
           "The user may also invoke a skill directly. When that happens, its instructions appear in the conversation as a <skill_content> block, the same shape the skill tool returns. A skill that is already present this way does not need to be invoked again.",
           "<available_skills>",
           "  <skill>",

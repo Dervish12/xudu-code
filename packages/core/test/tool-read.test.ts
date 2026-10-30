@@ -30,6 +30,7 @@ const readToolNode = makeLocationNode({
   deps: [
     Tool.node,
     ReadToolFileSystem.node,
+    Environment.node,
     FileAccess.node,
     Image.node,
     Permission.node,

@@ -19,7 +19,7 @@ export const Output = Schema.Struct({
   output: Schema.String,
 })
 export const description = [
-  "Load a specialized skill's instructions and resources into the current conversation when the task at hand matches its description.",
+  "Load a specialized skill's instructions and resources into the current conversation. When the task at hand matches a listed skill's description, call this tool FIRST, before any other tool: the skill's instructions replace your default approach for that task.",
   "",
   "The skill ID must match an available skill or a skill explicitly referenced by the user.",
 ].join("\n")

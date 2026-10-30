@@ -78,12 +78,14 @@ import { ReadToolFileSystem } from "../tool/read-filesystem.js"
 import { ReadTool } from "../tool/plugin/read.js"
 import { ShellTool } from "../tool/plugin/shell.js"
 import { SkillTool } from "../tool/plugin/skill.js"
+import { SkillTriggerPlugin } from "./skill-trigger.js"
 import { SubagentTool } from "../tool/plugin/subagent.js"
 import { TodoTool } from "../tool/plugin/todo.js"
 import { Tool } from "../tool.js"
 import { ToolOutput } from "../tool-output.js"
 import { WebFetchTool } from "../tool/plugin/webfetch.js"
 import { WebSearchTool } from "../tool/plugin/websearch.js"
+import { ArtifactTool } from "../tool/plugin/artifact.js"
 import { WellKnown } from "../wellknown.js"
 import { WriteTool } from "../tool/plugin/write.js"
 import { AgentPlugin } from "./agent.js"
@@ -240,10 +242,12 @@ const pre = [
   ReadTool.Plugin,
   ShellTool.Plugin,
   SkillTool.Plugin,
+  SkillTriggerPlugin.Plugin,
   SubagentTool.Plugin,
   TodoTool.Plugin,
   WebFetchTool.Plugin,
   WebSearchTool.Plugin,
+  ArtifactTool.Plugin,
   WriteTool.Plugin,
   WarmingPlugin.Plugin,
 ] as const satisfies readonly InternalPlugin[]

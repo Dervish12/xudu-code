@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { Environment } from "@xudu/core/environment/index"
 import fs from "fs/promises"
 import path from "path"
 import { DateTime, Effect, Layer } from "effect"
@@ -43,6 +44,7 @@ const readToolNode = makeLocationNode({
   deps: [
     Tool.node,
     ReadToolFileSystem.node,
+    Environment.node,
     FileAccess.node,
     Image.node,
     Permission.node,

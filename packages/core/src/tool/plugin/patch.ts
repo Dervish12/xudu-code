@@ -9,6 +9,7 @@ import { Bom } from "@xudu/util/bom"
 import { Environment } from "../../environment/index.js"
 import { Formatter } from "../../formatter.js"
 import { FileMutation } from "../../file-mutation.js"
+import { ReadLedger } from "../read-ledger.js"
 import { Location } from "../../location.js"
 import { FileAccess } from "../../file-access.js"
 import { Patch } from "@xudu/util/patch"
@@ -157,6 +158,11 @@ export const Plugin = {
                                 }),
                             ),
                           )).text
+                    if (previous === undefined) {
+                      const seen = ReadLedger.check(context.sessionID, target.absolute, before)
+                      if (seen !== "ok")
+                        return yield* new ToolFailure({ message: ReadLedger.message(seen, target.resource) })
+                    }
                     prepared.push({ ...hunk, target, before, after: "" })
                     updates.set(target.absolute, null)
                     return
@@ -178,6 +184,9 @@ export const Plugin = {
                             }),
                         ),
                       )
+                      const seen = ReadLedger.check(context.sessionID, target.absolute, content.text)
+                      if (seen !== "ok")
+                        return yield* new ToolFailure({ message: ReadLedger.message(seen, target.resource) })
                       return Bom.join(content.text, content.bom)
                     }))
                   const before = Bom.split(original).text
@@ -294,6 +303,7 @@ export const Plugin = {
                   }),
                 { discard: true },
               )
+              for (const [path, text] of formatted) ReadLedger.record(context.sessionID, path, text)
               const files = prepared.map((change) => {
                 if (change.type === "delete") return patchFile(change)
                 const target = change.type === "update" && change.moveTarget ? change.moveTarget : change.target

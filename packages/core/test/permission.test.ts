@@ -292,6 +292,26 @@ describe("Permission", () => {
     }),
   )
 
+  it.effect("a saved shell approval never covers a destructive command", () =>
+    Effect.gen(function* () {
+      yield* setup()
+      const saved = yield* PermissionSaved.Service
+      yield* saved.add({ projectID: Project.ID.global, action: "shell", resources: ["git push *"] })
+      const service = yield* Permission.Service
+      expect(yield* service.ask(assertion({ action: "shell", resources: ["git push origin main"] }))).toMatchObject({
+        effect: "allow",
+      })
+      expect(
+        yield* service.ask(assertion({ action: "shell", resources: ["git push --force origin main"] })),
+      ).toMatchObject({ effect: "ask" })
+      // The same rule as an explicit configuration entry is honored.
+      yield* setRules([{ action: "shell", resource: "git push *", effect: "allow" }])
+      expect(
+        yield* service.ask(assertion({ action: "shell", resources: ["git push --force origin main"] })),
+      ).toMatchObject({ effect: "allow" })
+    }),
+  )
+
   it.effect("resolves an asked permission once", () =>
     Effect.gen(function* () {
       yield* setup()

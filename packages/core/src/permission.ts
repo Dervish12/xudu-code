@@ -1,6 +1,7 @@
 export * as Permission from "./permission.js"
 
 import { makeLocationNode } from "@xudu/util/effect/app-node"
+import { Destructive } from "./permission/destructive.js"
 import { Context, Deferred, Effect, Layer, Schema } from "effect"
 import { Permission } from "@xudu/schema/permission"
 import { Bus } from "./bus.js"
@@ -163,7 +164,11 @@ const layer = Layer.effect(
       const rules = yield* configured(input.sessionID, input.agent)
       if (denied(input, rules)) return { effect: "deny" as const, rules }
       const all = [...rules, ...(yield* savedRules())]
-      const effects = input.resources.map((resource) => evaluate(input.action, resource, all).effect)
+      // A saved "always allow" never covers a destructive shell command; only explicit configuration can.
+      const effects = input.resources.map(
+        (resource) =>
+          evaluate(input.action, resource, input.action === "shell" && Destructive.match(resource) ? rules : all).effect,
+      )
       const effect: Permission.Effect = effects.includes("ask") ? "ask" : "allow"
       const event = yield* hooks.trigger("permission", "evaluate", {
         sessionID: input.sessionID,

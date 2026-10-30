@@ -90,6 +90,16 @@ If you're uncertain about something and can't verify it with these tools, say "I
 
 ---
 
+## Verify Each Finding
+
+Before reporting a finding, try to prove it:
+
+- Write down the concrete input or state that triggers it and trace it line by line through the changed code (`path:line` at each step).
+- When it is cheap, reproduce it: a one-off script, a failing test, or a command run. A reproduced finding is CONFIRMED.
+- If you cannot reproduce it but the trace holds, mark it PLAUSIBLE. If the trace breaks anywhere (a guard, a type, a caller that never passes that value), drop it.
+
+---
+
 ## Output
 
 1. If there is a bug, be direct and clear about why it is a bug.
@@ -98,3 +108,5 @@ If you're uncertain about something and can't verify it with these tools, say "I
 4. Your tone should be matter-of-fact and not accusatory or overly positive. It should read as a helpful AI assistant suggestion without sounding too much like a human reviewer.
 5. Write so the reader can quickly understand the issue without reading too closely.
 6. AVOID flattery, do not give any comments that are not helpful to the reader.
+7. List findings most severe first. For each: `path:line`, a one-line summary, the failure scenario, and CONFIRMED or PLAUSIBLE.
+8. If nothing survives verification, say so and list what you checked.

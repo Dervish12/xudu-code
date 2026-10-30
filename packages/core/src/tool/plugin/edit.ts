@@ -13,6 +13,7 @@ import { Bom } from "@xudu/util/bom"
 import { Effect, Schema } from "effect"
 import { Environment } from "../../environment/index.js"
 import { FileMutation } from "../../file-mutation.js"
+import { ReadLedger } from "../read-ledger.js"
 import { Formatter } from "../../formatter.js"
 import { Location } from "../../location.js"
 import { FileAccess } from "../../file-access.js"
@@ -255,6 +256,8 @@ export const Plugin = {
                 ),
               )
               const source = original.text
+              const seen = ReadLedger.check(context.sessionID, target.absolute, source)
+              if (seen !== "ok") return yield* new ToolFailure({ message: ReadLedger.message(seen, input.path) })
               // Strings that differ only in \r ask to change line endings themselves, so they apply to the exact
               // bytes. Every other edit matches the LF view Read shows the model and keeps the file's endings.
               const endingsOnly = input.oldString.replaceAll("\r", "") === input.newString.replaceAll("\r", "")
@@ -307,6 +310,7 @@ export const Plugin = {
               const formatted = (yield* formatter.file(target.absolute))
                 ? yield* FileMutation.syncTextBom(environment.files, target.absolute, bom)
                 : (yield* FileMutation.readText(environment.files, target.absolute)).text
+              ReadLedger.record(context.sessionID, target.absolute, formatted)
               return {
                 files: [fileDiff(result.resource, source, formatted)],
                 replacements,

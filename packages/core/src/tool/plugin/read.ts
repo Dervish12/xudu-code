@@ -11,6 +11,8 @@ import { SessionInstructions } from "../../session/instructions.js"
 import { AbsolutePath } from "../../schema.js"
 import { ReadToolFileSystem } from "../read-filesystem.js"
 import { Environment } from "../../environment/index.js"
+import { FileMutation } from "../../file-mutation.js"
+import { ReadLedger } from "../read-ledger.js"
 import { InstructionFiles } from "../../instruction-files.js"
 
 export const name = "read"
@@ -34,6 +36,7 @@ export const Plugin = {
     const sessionInstructions = yield* SessionInstructions.Service
     const fs = yield* FSUtil.Service
     const location = yield* Location.Service
+    const environment = yield* Environment.Service
 
     yield* ctx.tool
       .transform((editor) =>
@@ -79,6 +82,14 @@ export const Plugin = {
                     }),
                 ),
               )
+              // Remember what the model saw, so edit, write and patch can require a read first.
+              if (result.content.type !== "list-page") {
+                yield* FileMutation.readText(environment.files, result.target.absolute).pipe(
+                  Effect.map((file) => ReadLedger.record(context.sessionID, result.target.absolute, file.text)),
+                  Effect.catch(() => Effect.void),
+                  Effect.catchDefect(() => Effect.void),
+                )
+              }
               // After a successful read, discover nearby AGENTS.md walking up to the Location
               // root exclusive and inject them as durable synthetic instructions. For a
               // directory listing the walk starts at the directory itself (so its own AGENTS.md

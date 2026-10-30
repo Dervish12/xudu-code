@@ -12,6 +12,7 @@ import { Effect, Schema } from "effect"
 import { Bom } from "@xudu/util/bom"
 import { Environment } from "../../environment/index.js"
 import { FileMutation } from "../../file-mutation.js"
+import { ReadLedger } from "../read-ledger.js"
 import { Formatter } from "../../formatter.js"
 import { FileAccess } from "../../file-access.js"
 import { Permission } from "../../permission.js"
@@ -73,6 +74,10 @@ export const Plugin = {
               const current = yield* FileMutation.readText(environment.files, target.absolute).pipe(
                 Effect.catchTag("Environment.NotFound", () => Effect.undefined),
               )
+              if (current) {
+                const seen = ReadLedger.check(context.sessionID, target.absolute, current.text)
+                if (seen !== "ok") return yield* new ToolFailure({ message: ReadLedger.message(seen, input.path) })
+              }
               const next = Bom.split(input.content)
               const preview = fileDiff(target.resource, current?.text ?? "", next.text, current ? "modified" : "added")
               yield* permission.assert({
@@ -85,14 +90,17 @@ export const Plugin = {
                 source,
               })
               const result = yield* fileMutation.writeTextPreservingBom({ target, content: input.content })
-              const bom = (yield* FileMutation.readText(environment.files, target.absolute)).bom
-              if (yield* formatter.file(target.absolute)) {
-                yield* FileMutation.syncTextBom(environment.files, target.absolute, bom)
-              }
+              const written = yield* FileMutation.readText(environment.files, target.absolute)
+              const final = (yield* formatter.file(target.absolute))
+                ? yield* FileMutation.syncTextBom(environment.files, target.absolute, written.bom)
+                : written.text
+              ReadLedger.record(context.sessionID, target.absolute, final)
               return result
             }).pipe(
               Effect.map((output) => ({ output, content: toModelContent(output) })),
-              Effect.mapError((error) => new ToolFailure({ message: `Unable to write ${input.path}`, error })),
+              Effect.mapError((error) =>
+                error instanceof ToolFailure ? error : new ToolFailure({ message: `Unable to write ${input.path}`, error }),
+              ),
             ),
         }),
       )
